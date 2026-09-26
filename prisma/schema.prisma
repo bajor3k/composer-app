@@ -1,0 +1,323 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  ADVISOR
+  CLIENT
+  OPERATIONS
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  role          UserRole  @default(ADVISOR)
+  avatarUrl     String?
+  azureAdId     String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  advisor       Advisor?
+  client        Client?
+}
+
+model Advisor {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  firmName        String?
+  wealthboxId     String?   @unique
+  repCode         String?
+  phone           String?
+  team            String?
+  seniorityLevel  String?   // junior, senior, lead
+  // Wealthbox sync
+  wealthboxUpdatedAt DateTime?
+  lastSyncedAt       DateTime?
+  syncSource         String?   // "composer" | "wealthbox"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  clients         Client[]
+  accounts        Account[]
+  portfolios      Portfolio[]
+  households      Household[]
+  syncConfig      SyncConfig?
+}
+
+model Household {
+  id              String    @id @default(cuid())
+  name            String
+  advisorId       String
+  advisor         Advisor   @relation(fields: [advisorId], references: [id])
+  // Wealthbox sync
+  wealthboxId        String?   @unique
+  wealthboxUpdatedAt DateTime?
+  lastSyncedAt       DateTime?
+  syncSource         String?   // "composer" | "wealthbox"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  clients         Client[]
+  accounts        Account[] @relation("HouseholdAccounts")
+}
+
+model Client {
+  id              String     @id @default(cuid())
+  userId          String?    @unique
+  user            User?      @relation(fields: [userId], references: [id])
+  advisorId       String
+  advisor         Advisor    @relation(fields: [advisorId], references: [id])
+  householdId     String?
+  household       Household? @relation(fields: [householdId], references: [id])
+  firstName       String
+  middleName      String?
+  lastName        String
+  suffix          String?    // Jr., Sr., II, III, IV
+  email           String?
+  phone           String?
+  secondaryPhone  String?
+  dateOfBirth     DateTime?
+  ssn             String?
+  citizenshipCountry String?  @default("US")
+  address         String?
+  city            String?
+  state           String?
+  zipCode         String?
+  mailingAddress  String?
+  mailingCity     String?
+  mailingState    String?
+  mailingZipCode  String?
+  // Government ID
+  idType          String?    // drivers_license, passport, state_id
+  idNumber        String?
+  idIssuingState  String?
+  idExpirationDate DateTime?
+  // Employment
+  riskTolerance   String?    // conservative, moderate, aggressive, moderately_aggressive
+  investmentObjective String? // growth, income, balanced, preservation, speculation
+  employmentStatus String?   // employed, self_employed, retired, student, unemployed, homemaker
+  occupation      String?
+  employer        String?
+  isAssociatedPerson Boolean? @default(false)
+  // Financial
+  annualIncome    Decimal?   @db.Decimal(18, 2)
+  netWorth        Decimal?   @db.Decimal(18, 2)
+  liquidNetWorth  Decimal?   @db.Decimal(18, 2)
+  sourceOfFunds   String?    // employment, inheritance, investment, gift, other
+  // Investment suitability
+  timeHorizon     String?    // less_than_1_year, 1_3_years, 3_5_years, 5_10_years, over_10_years
+  liquidityNeeds  String?    // very_important, somewhat_important, not_important
+  investmentExperience String? // none, limited, moderate, extensive
+  // Trusted contact (FINRA Rule 4512)
+  trustedContactName  String?
+  trustedContactPhone String?
+  trustedContactRelationship String?
+  // Onboarding
+  onboardingStatus String?   @default("prospect") // prospect, in_progress, active, inactive
+  notes           String?
+  // Wealthbox sync
+  wealthboxId        String?   @unique
+  wealthboxUpdatedAt DateTime?
+  lastSyncedAt       DateTime?
+  syncSource         String?   // "composer" | "wealthbox"
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  accounts        Account[]
+}
+
+enum CustodialPlatform {
+  PERSHING
+  SCHWAB
+  FIDELITY
+}
+
+enum AccountType {
+  INDIVIDUAL
+  JOINT
+  IRA
+  ROTH_IRA
+  SEP_IRA
+  SIMPLE_IRA
+  TRUST
+  ESTATE
+  CUSTODIAL
+  K401
+  K403B
+  PENSION
+  CORPORATE
+  LLC
+  PARTNERSHIP
+}
+
+model Account {
+  id                  String            @id @default(cuid())
+  accountNumber       String
+  accountName         String?
+  custodialPlatform   CustodialPlatform
+  custodialAccountId  String?
+  clientId            String
+  client              Client            @relation(fields: [clientId], references: [id])
+  advisorId           String
+  advisor             Advisor           @relation(fields: [advisorId], references: [id])
+  householdId         String?
+  household           Household?        @relation("HouseholdAccounts", fields: [householdId], references: [id])
+  accountType         AccountType
+  balance             Decimal?          @db.Decimal(18, 2)
+  cashBalance         Decimal?          @db.Decimal(18, 2)
+  isManaged           Boolean           @default(true)
+  status              String            @default("active")
+  openDate            DateTime?
+  feeSchedule         String?           // flat, tiered, performance
+  feeRate             Decimal?          @db.Decimal(5, 4) // e.g., 0.0100 = 1%
+  billingFrequency    String?           // monthly, quarterly, annually
+  priorYearEndBalance Decimal?          @db.Decimal(18, 2)
+  modelPortfolioId    String?
+  modelPortfolio      Portfolio?        @relation(fields: [modelPortfolioId], references: [id])
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  holdings            Holding[]
+  transactions        Transaction[]
+  performanceRecords  AccountPerformance[]
+
+  @@unique([accountNumber, custodialPlatform])
+}
+
+model Holding {
+  id          String   @id @default(cuid())
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol      String
+  name        String?
+  assetClass  String?  // equity, fixed_income, cash, alternative, other
+  quantity    Decimal  @db.Decimal(18, 6)
+  costBasis   Decimal? @db.Decimal(18, 2)
+  price       Decimal? @db.Decimal(18, 4)
+  marketValue Decimal? @db.Decimal(18, 2)
+  purchaseDate DateTime?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([accountId, symbol])
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactionType String   // buy, sell, dividend, interest, fee, transfer_in, transfer_out
+  symbol          String?
+  quantity        Decimal? @db.Decimal(18, 6)
+  price           Decimal? @db.Decimal(18, 4)
+  amount          Decimal  @db.Decimal(18, 2)
+  fees            Decimal? @db.Decimal(18, 2)
+  settledDate     DateTime?
+  description     String?
+  contributionYear Int?
+  createdAt       DateTime @default(now())
+}
+
+model AccountPerformance {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  periodStart     DateTime
+  periodEnd       DateTime
+  beginningValue  Decimal  @db.Decimal(18, 2)
+  endingValue     Decimal  @db.Decimal(18, 2)
+  netFlows        Decimal  @db.Decimal(18, 2)
+  twrReturn       Decimal  @db.Decimal(8, 6)  // e.g., 0.082543 = 8.2543%
+  mwrReturn       Decimal  @db.Decimal(8, 6)
+  benchmarkReturn Decimal? @db.Decimal(8, 6)
+  createdAt       DateTime @default(now())
+
+  @@unique([accountId, periodStart, periodEnd])
+}
+
+model Portfolio {
+  id          String    @id @default(cuid())
+  advisorId   String
+  advisor     Advisor   @relation(fields: [advisorId], references: [id])
+  name        String
+  description String?
+  riskLevel   String?   // conservative, moderate, aggressive
+  benchmarkSymbol String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  allocations Allocation[]
+  accounts    Account[]
+}
+
+model Allocation {
+  id            String    @id @default(cuid())
+  portfolioId   String
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  symbol        String
+  name          String?
+  assetClass    String?
+  targetPct     Decimal   @db.Decimal(5, 2)
+  toleranceBand Decimal?  @db.Decimal(5, 2) // e.g., 2.00 = +/- 2%
+}
+
+// Wealthbox sync audit log
+model SyncLog {
+  id            String    @id @default(cuid())
+  entityType    String    // "contact", "household"
+  entityId      String    // Composer entity ID
+  wealthboxId   String?
+  direction     String    // "inbound" | "outbound"
+  action        String    // "create" | "update" | "delete"
+  status        String    // "success" | "failed" | "conflict"
+  errorMessage  String?
+  payload       String?   // JSON snapshot for debugging
+  createdAt     DateTime  @default(now())
+
+  @@index([entityType, entityId])
+  @@index([wealthboxId])
+  @@index([createdAt])
+}
+
+// Per-advisor Wealthbox sync configuration
+model SyncConfig {
+  id                  String    @id @default(cuid())
+  advisorId           String    @unique
+  advisor             Advisor   @relation(fields: [advisorId], references: [id])
+  wealthboxApiKey     String    // API key for this advisor's Wealthbox account
+  webhookSecret       String?   // For verifying inbound webhooks
+  isActive            Boolean   @default(true)
+  lastFullSync        DateTime?
+  syncContacts        Boolean   @default(true)
+  syncHouseholds      Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+// Security master for reference data
+model Security {
+  id            String   @id @default(cuid())
+  symbol        String   @unique
+  name          String
+  assetClass    String   // equity, fixed_income, cash, alternative, other
+  sector        String?
+  exchangeTicker String?
+  cusip         String?
+  isin          String?
+  price         Decimal  @db.Decimal(18, 4)
+  previousClose Decimal? @db.Decimal(18, 4)
+  priceDate     DateTime
+  peRatio       Decimal? @db.Decimal(8, 2)
+  dividendYield Decimal? @db.Decimal(8, 4)
+  expenseRatio  Decimal? @db.Decimal(8, 4) // for funds
+  aum           Decimal? @db.Decimal(18, 2) // for funds
+  updatedAt     DateTime @updatedAt
+}

@@ -1,0 +1,547 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant medium (&:where(.medium, .medium *));
+@custom-variant glass (&:where(.glass, .glass *));
+@custom-variant mocha (&:where(.mocha, .mocha *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: #737373;
+  --color-accent: #10B981;
+  --color-accent-hover: #059669;
+  --color-danger: #FF2D2D;
+  --color-surface: var(--surface);
+  /* The `-dark` surface tokens reference real vars (defaulted in :root) so a stacked-on-dark
+     theme like Mocha can repaint every `dark:bg-surface-dark` / `dark:bg-sidebar-dark` /
+     `dark:border-border-dark` at once by overriding the var — light & dark keep their values. */
+  --color-surface-dark: var(--surface-dark);
+  --color-border: var(--border);
+  --color-border-dark: var(--border-dark);
+  --color-sidebar: #FFFFFF; /* FLIP EXPERIMENT: navbar↔primary (was #F7F7F7) */
+  --color-sidebar-dark: var(--sidebar-dark);
+  --font-sans: var(--font-hanken);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --background: #F7F7F7; /* FLIP EXPERIMENT: primary↔navbar (was #FFFFFF) */
+  --foreground: #000000;
+  --surface: #FAFAFA;
+  --border: #E5E5E5;
+  /* Defaults for the tokenized `-dark` surfaces (only used under .dark; Mocha overrides them). */
+  --surface-dark: #0A0A0A;
+  --sidebar-dark: #121212;
+  --border-dark: #1A1A1A;
+  /* Text-selection highlight — standard highlighter yellow. The translucent yellow blends
+     with the page background, so each theme uses a slightly different source value tuned to
+     render the SAME perceived yellow (~#FAE028). Light = white bg. */
+  --selection: rgba(249, 219, 2, 0.85);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #f7f7f7 inset !important;
+  -webkit-text-fill-color: #000 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #FFFFFF;
+  /* Near-opaque so the yellow stays bright over black (a translucent yellow would go olive). */
+  --selection: rgba(255, 229, 41, 0.98);
+}
+
+/* Medium Mode — standalone theme (never stacked on .dark). Only --background /
+   --foreground are real overridable vars here; all other surfaces are repainted
+   via medium:bg-[...] utilities in the components. */
+.medium {
+  /* Main page sits a touch lighter than the #c2c2c2 navbar/panels so the two surfaces read apart. */
+  --background: #D4D4D4;
+  --foreground: #000000;
+  /* Darker accent for active/elevated surfaces (active nav rows, account
+     selector, hovers) so they don't read as bright white against the gray. */
+  --surface: #B0B0B0;
+  /* Border darker than the surfaces so the edge reads as a soft shadow, not a light outline. */
+  --border: #A8A8A8;
+  /* Tuned for the #D4D4D4 gray bg so the highlighter yellow matches light/dark. */
+  --selection: rgba(255, 226, 10, 0.85);
+}
+
+/* Glass Mode — stacks on top of .dark (so all dark: surfaces apply). Only the body
+   background changes (#0d0d0d) and the sidebar gets a frosted "liquid glass" finish.
+   Defined AFTER .dark so this --background override wins. */
+.glass {
+  --background: #0D0D0D;
+}
+
+/* Mocha Mode — neutral dark palette that stacks on top of .dark (so every dark: surface and
+   the light text apply for free). Defined AFTER .dark so these var overrides win. Three anchor
+   tones drive the look:
+       middle content     #141414   (--background, the main center section)
+       left navbar        #181818   (--sidebar-dark, the sidebar/chrome)
+       lifted surfaces    #212121   (--surface-dark + the chatbox: cards, headers, menus)
+       elevated / borders #2A2A2A   (popovers, hovers, edges) */
+.mocha {
+  --background: #141414;
+  --foreground: #EDEDED;
+  --surface: #212121;
+  --border: #2A2A2A;
+  --surface-dark: #212121;
+  --sidebar-dark: #181818;
+  --border-dark: #2A2A2A;
+  /* Dark bg, so the highlighter yellow stays near-opaque like Dark mode. */
+  --selection: rgba(255, 229, 41, 0.95);
+}
+
+/* The chatbox composer is coded to the SIDEBAR tone (`dark:bg-sidebar-dark`), so it would
+   otherwise match the navbar. Lift it to the surface tone so the typing box reads distinct. */
+.mocha .chat-composer { background-color: #212121; }
+
+/* Repaint the surfaces that hardcode a neutral near-black instead of using the tokens above.
+   `~=` matches the WHOLE class token, so it never touches the 642 `bg-black` action buttons
+   or translucent overlays like `dark:bg-black/20` — only the solid surface utilities.
+   (`dark:bg-[#141414]` is intentionally NOT remapped — its literal value already equals the
+   middle background.) */
+.mocha [class~="dark:bg-black"]     { background-color: var(--background); }
+.mocha [class~="dark:bg-zinc-900"]  { background-color: var(--surface-dark); }
+.mocha [class~="dark:bg-[#0a0a0a]"] { background-color: var(--surface-dark); }
+.mocha [class~="dark:bg-[#111]"]    { background-color: var(--surface-dark); }
+.mocha [class~="dark:bg-[#0f0f0f]"] { background-color: var(--surface-dark); }
+.mocha [class~="dark:bg-[#1a1a1a]"] { background-color: #2A2A2A; }
+.mocha [class~="dark:bg-[#242424]"] { background-color: #2A2A2A; }
+.mocha [class~="dark:bg-[#3A3A3C]"] { background-color: #2A2A2A; }
+
+/* Frosted liquid-glass sidebar — translucent panel with a glossy top sheen, a crisp
+   light edge, and a soft inner highlight. The .glass + .app-sidebar selector (2 classes)
+   outweighs Tailwind's :where()-based dark:/bg- utilities, so it wins without !important. */
+.glass .app-sidebar.is-expanded,
+.glass .app-sidebar-flyout,
+.glass .page-drawer-card {
+  /* !important — overrides Tailwind's dark: bg/border utilities, which sit in a
+     cascade layer that otherwise outranks this rule. */
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 16%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(130% 90% at 50% 0%, rgba(255, 255, 255, 0.07), transparent 70%) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  /* The actual blur is applied via glass:backdrop-blur-* utilities on the sidebar in
+     Sidebar.tsx — Lightning CSS strips a raw `backdrop-filter` declaration here. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 12px 48px rgba(0, 0, 0, 0.55);
+}
+
+/* Launched pages (right-side drawer + canvas split-view, rendered in an iframe with
+   ?canvas=true) adopt the navbar's lifted surface tone so they read as a distinct
+   floating panel rather than a continuation of the page background. Overriding
+   --background recolors every `bg-background` in the page at once. Tones mirror the
+   sidebar's bg-sidebar / dark:bg-sidebar-dark / medium:#c2c2c2 treatment. */
+.canvas-surface { --background: #FFFFFF; } /* match navbar tone (--color-sidebar) after the flip */
+.dark .canvas-surface { --background: #121212; }
+
+/* Raised chip shadow in dark mode. Written as plain CSS instead of the
+   `dark:shadow-[inset_…,…]` arbitrary utility: Turbopack/Tailwind mangles the
+   --tw-shadow-color injection on that multi-shadow rgba() value and emits
+   invalid CSS, 500ing any page that uses the chips. */
+.dark .chip-raise {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.09), 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+}
+.medium .canvas-surface { --background: #C2C2C2; }
+/* Mocha: launched pages adopt the navbar tone so they read as a floating panel. */
+.mocha .canvas-surface { --background: #181818; }
+
+/* Glass mode: the navbar/sidebar is a frosted liquid-glass panel, so the launched page
+   reads the same. The page's bg-background surfaces drop to transparent and the same
+   frosted tint + glossy sheen the sidebar uses is painted on the canvas-surface root —
+   layered over the iframe's dark body, it reproduces the sidebar's liquid-glass look.
+   Glass-only; light/dark/medium keep the solid lifted tone above. */
+.glass .canvas-surface {
+  --background: transparent;
+  background-color: rgba(255, 255, 255, 0.05);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.025) 16%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(130% 90% at 50% 0%, rgba(255, 255, 255, 0.07), transparent 70%);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-hanken), system-ui, -apple-system, sans-serif;
+}
+
+/* Text-selection highlight — highlighter yellow with dark text (so it reads like a marker
+   in every theme; white-on-yellow would be unreadable in dark mode). */
+::selection {
+  background-color: var(--selection);
+  color: #171717;
+}
+::-moz-selection {
+  background-color: var(--selection);
+  color: #171717;
+}
+
+/* Hide scrollbars but allow scrolling */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Button styles */
+.btn-primary {
+  background-color: #2563EB;
+  color: white;
+}
+.btn-primary:hover {
+  background-color: #1D4ED8;
+}
+
+.btn-secondary {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--foreground);
+}
+.btn-secondary:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+.dark .btn-secondary {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.dark .btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Primary action button - inverts with theme for high contrast */
+/* Light: black bg, white text | Dark: white bg, black text */
+.btn-action {
+  @apply bg-black text-white hover:opacity-90 transition-opacity;
+}
+.dark .btn-action {
+  @apply bg-white text-black;
+}
+
+/* Surface button - blends with theme */
+/* Light: white bg, black text | Dark: black bg, white text */
+.btn-surface {
+  @apply bg-white text-black border border-black/10 hover:bg-black/5;
+}
+.dark .btn-surface {
+  @apply bg-black text-white border-white/10 hover:bg-white/5;
+}
+
+/* Landing page animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Custodian name flips into place like a flip-clock flap; the underline wrapper stays put. */
+@keyframes custodianFlip {
+  from { opacity: 0; transform: rotateX(-90deg); }
+  to { opacity: 1; transform: rotateX(0deg); }
+}
+
+/* Alert bell — swings side to side from its top like it's ringing. Pivot at the
+   top center so the clapper end swings widest. */
+@keyframes bellRing {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(14deg); }
+  30%  { transform: rotate(-12deg); }
+  45%  { transform: rotate(9deg); }
+  60%  { transform: rotate(-6deg); }
+  75%  { transform: rotate(3deg); }
+  85%  { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Report document — the text lines draw themselves in, then erase, on a loop,
+   like a report being written. Paths use pathLength="1" so the dash math is
+   normalized; offset 1 = empty, 0 = fully drawn, -1 = erased the same direction. */
+@keyframes docWrite {
+  0%   { stroke-dashoffset: 1; }
+  45%  { stroke-dashoffset: 0; }
+  55%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
+}
+
+/* Document tile entrance — scales/fades in with a little pop (paired with a spring bezier). */
+@keyframes docPop {
+  from { opacity: 0; transform: scale(0.85) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Document chat card — slides in from the right like the Studio chat panel. */
+@keyframes chatCardIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Hover preview that grows in place, centered over a document tile. */
+@keyframes previewGrow {
+  from { opacity: 0; transform: scale(0.72); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Rendered .docx preview (mammoth → HTML). Reads like a document page. */
+.docx-preview { font-size: 14px; line-height: 1.65; color: #1a1a1a; }
+.docx-preview h1 { font-size: 1.6em; font-weight: 700; margin: 0.9em 0 0.4em; }
+.docx-preview h2 { font-size: 1.3em; font-weight: 700; margin: 0.8em 0 0.4em; }
+.docx-preview h3 { font-size: 1.12em; font-weight: 600; margin: 0.7em 0 0.3em; }
+.docx-preview h4, .docx-preview h5, .docx-preview h6 { font-weight: 600; margin: 0.6em 0 0.3em; }
+.docx-preview p { margin: 0.55em 0; }
+.docx-preview ul, .docx-preview ol { margin: 0.55em 0; padding-left: 1.6em; }
+.docx-preview ul { list-style: disc; }
+.docx-preview ol { list-style: decimal; }
+.docx-preview li { margin: 0.2em 0; }
+.docx-preview a { color: #2563eb; text-decoration: underline; }
+.docx-preview strong { font-weight: 700; }
+.docx-preview em { font-style: italic; }
+.docx-preview table { border-collapse: collapse; width: 100%; margin: 0.9em 0; }
+.docx-preview th, .docx-preview td { border: 1px solid #ddd; padding: 6px 10px; font-size: 0.92em; vertical-align: top; }
+.docx-preview th { background: #f6f6f6; font-weight: 600; text-align: left; }
+.docx-preview img { max-width: 100%; height: auto; }
+
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(12px, -8px) scale(1.03); }
+}
+
+@keyframes heroGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1) rotate(0deg); }
+  33% { opacity: 0.6; transform: scale(1.05) rotate(1deg); }
+  66% { opacity: 0.3; transform: scale(0.98) rotate(-1deg); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 0.8s step-end infinite;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.animate-drift {
+  animation: drift 20s ease-in-out infinite;
+}
+
+.animate-hero-glow {
+  animation: heroGlow 8s ease-in-out infinite;
+}
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-reveal-delay-1 { transition-delay: 0.1s; }
+.scroll-reveal-delay-2 { transition-delay: 0.2s; }
+.scroll-reveal-delay-3 { transition-delay: 0.3s; }
+.scroll-reveal-delay-4 { transition-delay: 0.4s; }
+.scroll-reveal-delay-5 { transition-delay: 0.5s; }
+.scroll-reveal-delay-6 { transition-delay: 0.6s; }
+
+/* Bento grid card entry */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.bento-card {
+  opacity: 0;
+  animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.scroll-reveal.visible .bento-card {
+  opacity: 0;
+  animation: scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Logo marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25%); }
+}
+
+.animate-marquee {
+  animation: marquee 18s linear infinite;
+}
+
+/* Fast marquee for module strip */
+@keyframes marquee-fast {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25%); }
+}
+
+.animate-marquee-fast {
+  animation: marquee-fast 30s linear infinite;
+}
+
+/* Scroll indicator line */
+@keyframes scroll-line {
+  0% { top: -100%; }
+  100% { top: 200%; }
+}
+
+.animate-scroll-line {
+  animation: scroll-line 1.5s ease-in-out infinite;
+}
+
+/* Horizontal reveal */
+.h-reveal {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.h-reveal.h-revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+
+/* AI "thinking" indicator — a light sweeps across the status label so a long run
+   never reads as a frozen screen. Colors are driven by two vars so the sweep works
+   on every theme (glass/mocha stack on .dark, so the .dark rule covers them). */
+@keyframes agentShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.agent-shimmer {
+  --agent-shimmer-base: rgba(0, 0, 0, 0.35);
+  --agent-shimmer-hi: rgba(0, 0, 0, 0.85);
+  background-image: linear-gradient(
+    90deg,
+    var(--agent-shimmer-base) 0%,
+    var(--agent-shimmer-base) 42%,
+    var(--agent-shimmer-hi) 50%,
+    var(--agent-shimmer-base) 58%,
+    var(--agent-shimmer-base) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: agentShimmer 2.6s linear infinite;
+}
+
+.dark .agent-shimmer {
+  --agent-shimmer-base: rgba(255, 255, 255, 0.35);
+  --agent-shimmer-hi: rgba(255, 255, 255, 0.92);
+}
+
+.medium .agent-shimmer {
+  --agent-shimmer-base: rgba(0, 0, 0, 0.4);
+  --agent-shimmer-hi: rgba(0, 0, 0, 0.9);
+}
+
+/* The thinking bubble breathes so the whole element, not just the text, shows life. */
+@keyframes agentBreathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.72; }
+}
+
+.animate-agent-breathe {
+  animation: agentBreathe 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-shimmer {
+    animation: none;
+    background-image: none;
+    color: var(--agent-shimmer-base);
+    -webkit-text-fill-color: var(--agent-shimmer-base);
+  }
+  .animate-agent-breathe { animation: none; }
+}
+
+/* iOS-style jiggle animation for exclude mode */
+@keyframes jiggle {
+  0% { transform: rotate(-0.3deg); }
+  50% { transform: rotate(0.3deg); }
+  100% { transform: rotate(-0.3deg); }
+}
+
+.animate-jiggle {
+  animation: jiggle 0.4s ease-in-out infinite;
+}
+
+/* Stagger the animation for different cards */
+.animate-jiggle:nth-child(2n) {
+  animation-delay: 0.05s;
+}
+.animate-jiggle:nth-child(3n) {
+  animation-delay: 0.1s;
+}
+
+@keyframes competencyModalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Landing page utilities */
+.landing-tech-label {
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+/* Live market data — tick flash.
+   Driven by a data-attribute rather than Tailwind classes on purpose: the
+   mocha theme matches literal class tokens (see the .mocha rules above), so
+   introducing new arbitrary-value classes here would risk that coupling.
+   color-mix against the semantic theme vars means all five themes inherit
+   correct colors with no per-theme rules. */
+@keyframes liveFlashUp {
+  0% { background-color: color-mix(in srgb, var(--color-accent) 22%, transparent); }
+  100% { background-color: transparent; }
+}
+@keyframes liveFlashDown {
+  0% { background-color: color-mix(in srgb, var(--color-danger) 22%, transparent); }
+  100% { background-color: transparent; }
+}
+[data-flash="up"] {
+  animation: liveFlashUp 0.7s ease-out;
+  border-radius: 3px;
+}
+[data-flash="down"] {
+  animation: liveFlashDown 0.7s ease-out;
+  border-radius: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-flash] { animation: none; }
+}

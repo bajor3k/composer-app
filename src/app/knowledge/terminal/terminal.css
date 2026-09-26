@@ -1,0 +1,43 @@
+/* Terminal-scoped polish primitives.
+   Motion only — no colors, fonts, or spacing overrides (those stay on the
+   existing theme tokens). Every animation degrades to a no-op under
+   prefers-reduced-motion. */
+
+@keyframes terminal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* One orchestrated page-load reveal. Panels stagger via --rise-i. */
+.terminal-rise {
+  animation: terminal-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--rise-i, 0) * 60ms);
+  will-change: transform, opacity;
+}
+
+/* Quick fade when tab content swaps (state-change micro-interaction only). */
+@keyframes terminal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.terminal-fade {
+  animation: terminal-fade 0.28s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-rise,
+  .terminal-fade {
+    animation: none;
+  }
+}

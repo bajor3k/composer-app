@@ -1,0 +1,57 @@
+{
+  "name": "composer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-assisted wealth-management workspace for financial advisors: accounts and portfolios, CRM, alerts, reports, cases, and Azure AI Foundry chat agents.",
+  "scripts": {
+    "dev": "next dev",
+    "dev:session": "NEXT_DIST_DIR=.next-session next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "db:update-prices": "tsx scripts/update-prices.ts",
+    "agents:list": "tsx scripts/sync-foundry-agents.ts list",
+    "agents:sync": "tsx scripts/sync-foundry-agents.ts",
+    "typecheck": "tsc --noEmit",
+    "prebuild": "tsc --noEmit",
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.13.1",
+    "@prisma/client": "^7.3.0",
+    "@react-pdf/renderer": "^4.3.2",
+    "@supabase/supabase-js": "^2.93.3",
+    "cuid": "^3.0.0",
+    "exceljs": "^4.4.0",
+    "lightweight-charts": "^5.1.0",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "yahoo-finance2": "^3.13.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@prisma/adapter-pg": "^7.3.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.2.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "pg": "^8.18.0",
+    "prisma": "^7.3.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

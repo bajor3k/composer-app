@@ -14,6 +14,31 @@ import { DefaultAzureCredential } from "@azure/identity";
  * would die on import before it could parse a flag.
  */
 
+/**
+ * Hard kill switch for every AI agent in this public copy of Composer.
+ *
+ * All Foundry traffic (the workspace, alerts and reports agents at runtime, and
+ * `npm run agents:sync` / `agents:list`) goes through `getToken()` and `api()` below.
+ * Both refuse before touching a credential or the network while this is false.
+ * It is a compile-time constant, not an env var, so no deployment setting can turn
+ * the agents back on; re-enabling them takes a code change.
+ */
+export const AGENTS_ENABLED = false;
+
+export const AGENTS_DISABLED_MESSAGE =
+  "AI agents are disabled in this public demo. All data is sample data; the rest of the app works without them.";
+
+export class AgentsDisabledError extends Error {
+  constructor() {
+    super(AGENTS_DISABLED_MESSAGE);
+    this.name = "AgentsDisabledError";
+  }
+}
+
+export function assertAgentsEnabled(): void {
+  if (!AGENTS_ENABLED) throw new AgentsDisabledError();
+}
+
 const TOKEN_SCOPE = "https://ai.azure.com/.default";
 const API_VERSION = "v1";
 
@@ -32,6 +57,7 @@ export function projectEndpoint(): string {
 }
 
 export async function getToken(): Promise<string> {
+  assertAgentsEnabled();
   if (cachedToken && cachedToken.expiresAt - Date.now() > TOKEN_LEEWAY_MS) {
     return cachedToken.token;
   }
@@ -47,6 +73,7 @@ export async function getToken(): Promise<string> {
 }
 
 export async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
+  assertAgentsEnabled();
   const response = await fetch(`${projectEndpoint()}${path}?api-version=${API_VERSION}`, {
     method,
     headers: {

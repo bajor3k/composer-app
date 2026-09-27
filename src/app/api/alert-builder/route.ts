@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import type { AgentTurn as ChatMessage } from "@/lib/ai/azure-agent";
 import { AgentNotConfiguredError } from "@/lib/ai/agent-definitions";
+import { AGENTS_ENABLED, AGENTS_DISABLED_MESSAGE } from "@/lib/ai/foundry-client";
 import { getAlertBuilderResponse, type AlertBuilderContext } from "@/lib/alerts/alert-builder";
 
 interface AlertBuilderRequest {
@@ -18,6 +19,11 @@ export async function POST(request: NextRequest) {
 
     const limited = enforceRateLimit(request, "alert-builder", 30, 60_000);
     if (limited) return limited;
+
+    // Every AI agent is switched off in this public copy (see foundry-client.ts).
+    if (!AGENTS_ENABLED) {
+      return NextResponse.json({ error: AGENTS_DISABLED_MESSAGE }, { status: 503 });
+    }
 
     const body = (await request.json()) as AlertBuilderRequest;
     const message = (body.message || "").trim();

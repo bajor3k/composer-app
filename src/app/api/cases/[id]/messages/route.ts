@@ -5,6 +5,7 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { supabase } from "@/lib/supabase";
 import { buildCaseContext } from "@/lib/ai/case-context";
 import { runAgent } from "@/lib/ai/azure-agent";
+import { AgentsDisabledError } from "@/lib/ai/foundry-client";
 import { touchCase, upsertParticipant, type CaseMessageRow, type CaseRow } from "@/lib/cases";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -222,7 +223,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           author_name: "Composer",
           author_type: "system",
           agent: null,
-          content: "The workspace agent could not be reached. Please try again in a moment.",
+          content:
+            error instanceof AgentsDisabledError
+              ? error.message
+              : "The workspace agent could not be reached. Please try again in a moment.",
         })
         .select()
         .single();

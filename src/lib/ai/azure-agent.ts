@@ -1,4 +1,4 @@
-import { api } from "@/lib/ai/foundry-client";
+import { api, assertAgentsEnabled } from "@/lib/ai/foundry-client";
 import { resolveAgentId, type AgentKey } from "@/lib/ai/agent-definitions";
 import {
   executeTool,
@@ -95,6 +95,7 @@ export async function runAgent(opts: {
   /** Extra tools for this run only, e.g. the report-builder proposal. */
   extraTools?: AgentTool[];
 }): Promise<AgentRunResult> {
+  assertAgentsEnabled();
   const agentId = resolveAgentId(opts.agent ?? "workspace");
 
   const seeded = (opts.history ?? []).map((turn) => ({

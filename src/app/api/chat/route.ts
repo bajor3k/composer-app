@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import type { AgentTurn as ChatMessage } from "@/lib/ai/azure-agent";
 import { parseAgentMessage } from "@/lib/ai/agents/registry";
 import { runAgent } from "@/lib/ai/azure-agent";
+import { AGENTS_ENABLED, AGENTS_DISABLED_MESSAGE } from "@/lib/ai/foundry-client";
 import type { ChatReference } from "@/components/ai-chat/types";
 import { getCanvasPageDescription } from "@/lib/canvas-pages";
 import { buildPortfolioCanvasContext } from "@/lib/ai/canvas-portfolio-context";
@@ -153,6 +154,11 @@ export async function POST(request: NextRequest) {
     // Throttle the (expensive, agent-backed) chat endpoint per IP.
     const limited = enforceRateLimit(request, "chat", 30, 60_000);
     if (limited) return limited;
+
+    // Every AI agent is switched off in this public copy (see foundry-client.ts).
+    if (!AGENTS_ENABLED) {
+      return NextResponse.json({ error: AGENTS_DISABLED_MESSAGE }, { status: 503 });
+    }
 
     const body = (await request.json()) as ChatRequest;
     const { message, attachments, references, history = [], canvasPage, canvasPageName, canvasAccountNumber, accountHolder, accountHousehold, custodianHint } = body;

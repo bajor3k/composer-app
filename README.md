@@ -35,6 +35,7 @@ Composer puts a financial advisor's book of business in one place: client househ
 - **Slash commands skip the model.** Catalog report commands execute their registered query directly through `POST /api/reports`: instant, deterministic, and free of AI cost.
 - **One market snapshot for every page.** All account screens poll a single endpoint (`GET /api/market/snapshot`, every 5 seconds) and take totals from it, so one account can't show two different values on two pages. When the market is closed, prices are simulated deterministically and clearly labelled "Simulated".
 - **Agent definitions live in the repo.** Agent names, instructions and tool schemas are versioned in code and pushed to Foundry with `npm run agents:sync`, so the portal can't drift from what the code can execute.
+- **Point-and-click context.** Any account page can open in a side drawer next to the chat. Turn on the element picker, click a value on the page, and it is attached to the next message as a reference with its page, account and surrounding context (`src/components/page-drawer/`, `src/lib/page-drawer/element-inspector.ts`).
 - **Collaborative cases.** A case is a shared, realtime thread (Supabase Realtime) for one account, with document uploads and `@agent` mentions that bring the AI into the conversation.
 
 ## Screenshots
@@ -56,6 +57,12 @@ Composer puts a financial advisor's book of business in one place: client househ
     <td><b>Report Center.</b> Saved and scheduled reports with run history. New reports can be described in chat to the Reports agent.</td>
     <td><b>Terminal.</b> Market research: watchlists, price charts, fundamentals and news for any ticker.</td>
   </tr>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/context-picker.png" alt="Point-and-click context: an element picked from the Portfolio page is attached to the chat" /></td>
+  </tr>
+  <tr>
+    <td colspan="2"><b>Point-and-click context.</b> Click any value on a page (here, Cash Available) and it attaches to the chat as a reference, so the agent answers about exactly what you're looking at.</td>
+  </tr>
 </table>
 
 ## Features
@@ -66,6 +73,7 @@ Composer puts a financial advisor's book of business in one place: client househ
 | Share-class analysis | Flags holdings that have a cheaper share class of the same fund, using fund data from SEC prospectus filings | `src/app/accounts/share-class/`, `src/lib/share-class/` |
 | CRM | Searchable client directory with contact and suitability details | `src/app/communication/crm/` |
 | Workspace chat | Chat with the Workspace agent about any account or household; history persists to the database | `src/app/chat/`, `src/app/api/chat/` |
+| Page drawer and element picker | Opens any account page beside the chat; click a value on it to attach it to the chat as a reference | `src/components/page-drawer/`, `src/lib/page-drawer/` |
 | Alerts | Rule builder (by hand or by chat), a scheduled evaluator, and a triage feed | `src/app/alerts/`, `src/lib/alerts/` |
 | Reports | A catalog of report queries, saved and scheduled reports, run history, Excel export | `src/app/reports/`, `src/lib/reports/`, `src/lib/report-registry.ts` |
 | Cases | Realtime shared threads per account, with documents and `@agent` mentions | `src/app/cases/`, `src/app/api/cases/` |
@@ -138,7 +146,7 @@ flowchart LR
 | Path | Contents |
 |---|---|
 | `src/app/` | Pages (`accounts/`, `alerts/`, `reports/`, `chat/`, `cases/`, `communication/`, `knowledge/`) and API routes (`api/`) |
-| `src/components/` | UI by domain (`ai-chat/`, `alerts/`, `portfolio/`, `terminal/`, ...) plus shared `ui/` primitives |
+| `src/components/` | UI by domain (`ai-chat/`, `alerts/`, `page-drawer/`, `portfolio/`, `terminal/`, ...) plus shared `ui/` primitives |
 | `src/lib/ai/` | Foundry client and runner, agent definitions, agent instructions (`instructions/*.md`), tool schemas, report builder |
 | `src/lib/alerts/` | Alert types, validation, evaluator, dry-run preview, alert builder |
 | `src/lib/reports/` | Saved-report validation, runner, dry-run preview |
